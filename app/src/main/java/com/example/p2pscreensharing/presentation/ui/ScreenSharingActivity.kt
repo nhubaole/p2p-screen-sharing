@@ -26,16 +26,22 @@ class ScreenSharingActivity : AppCompatActivity() {
     private lateinit var viewModel: ScreenSharingViewModel
     private var mediaProjection: MediaProjection? = null
 
+    private var viewerIp = ""
+    private var viewerPort = 0
+
     @RequiresApi(Build.VERSION_CODES.O)
     private val mediaProjectionLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode != Activity.RESULT_OK) {
                 Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
+
                 finish()
                 return@registerForActivityResult
             }
 
-            val projectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+            val projectionManager =
+                getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+
             mediaProjection = projectionManager.getMediaProjection(result.resultCode, result.data!!)
 
             mediaProjection?.registerCallback(object : MediaProjection.Callback() {
@@ -47,11 +53,12 @@ class ScreenSharingActivity : AppCompatActivity() {
 
             if (mediaProjection == null) {
                 Toast.makeText(this, "MediaProjection is null", Toast.LENGTH_SHORT).show()
+
                 finish()
                 return@registerForActivityResult
             }
 
-            setupScreenSharing()
+            injectDependencies()
         }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -59,42 +66,50 @@ class ScreenSharingActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_screen_sharing)
 
-        val viewerIp = intent.getStringExtra("viewer_ip") ?: ""
-        val viewerPort = intent.getIntExtra("viewer_port", 0)
+        //TODO: handle crash if server not started yet
+
+        getConfigs()
+        startStreamingForegroundService()
+        requestMediaProjectionPermission()
+
+        initViews()
+    }
+
+    override fun onDestroy() {
+        try {
+            viewModel.stopSharing()
+            mediaProjection?.stop()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        super.onDestroy()
+    }
+
+    private fun getConfigs() {
+        viewerIp = intent.getStringExtra("viewer_ip") ?: ""
+        viewerPort = intent.getIntExtra("viewer_port", 0)
 
         if (viewerIp.isBlank() || viewerPort == 0) {
             Toast.makeText(this, "Invalid Viewer Info", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
-
-        val serviceIntent = Intent(this, StreamingForegroundService::class.java)
-        startForegroundService(serviceIntent)
-
-        // Step 1: Request media projection permission
-        val projectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-        mediaProjectionLauncher.launch(projectionManager.createScreenCaptureIntent())
-
-        findViewById<Button>(R.id.btnStopSharing).setOnClickListener {
-            viewModel.stopSharing()
-            finish()
-        }
     }
 
-    private fun setupScreenSharing() {
+    private fun injectDependencies() {
         val mediaProjection = this.mediaProjection ?: return
 
-        // Step 2: Get screen metrics
         val metrics = DisplayMetrics()
         windowManager.defaultDisplay.getRealMetrics(metrics)
         val screenWidth = metrics.widthPixels
         val screenHeight = metrics.heightPixels
         val screenDensity = metrics.densityDpi
 
-        // Step 3: Manual DI
         val captureManager = AppContainer.createCaptureManager(
             mediaProjection, screenWidth, screenHeight, screenDensity
         )
+
         val streamingService = AppContainer.createStreamingService(captureManager)
         val streamingRepo = AppContainer.createStreamingRepository(streamingService)
         val signalingRepo = AppContainer.createSignalingRepository()
@@ -111,15 +126,28 @@ class ScreenSharingActivity : AppCompatActivity() {
             connectToPeer = connectToPeer
         )
 
-        // Step 4: Start sharing
         val viewerIp = intent.getStringExtra("viewer_ip") ?: ""
         val viewerPort = intent.getIntExtra("viewer_port", 0)
         viewModel.connectAndStartSharing(viewerIp, viewerPort)
     }
 
-    override fun onDestroy() {
-        viewModel.stopSharing()
-        mediaProjection?.stop()
-        super.onDestroy()
+    private fun initViews() {
+        findViewById<Button>(R.id.btnStopSharing).setOnClickListener {
+            viewModel.stopSharing()
+            finish()
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun startStreamingForegroundService() {
+        val serviceIntent = Intent(this, StreamingForegroundService::class.java)
+        startForegroundService(serviceIntent)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun requestMediaProjectionPermission() {
+        val projectionManager =
+            getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        mediaProjectionLauncher.launch(projectionManager.createScreenCaptureIntent())
     }
 }
