@@ -2,6 +2,7 @@ package com.example.p2pscreensharing.data.service
 
 import com.example.p2pscreensharing.core.CaptureManager
 import com.example.p2pscreensharing.core.SocketManager
+import com.example.p2pscreensharing.data.model.FramePacket
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -38,8 +39,10 @@ class StreamingServiceReal(
         receivingJob = CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
                 try {
-                    val frame = socketManager.receive()
-                    frame?.let { onFrameReceived(it) }
+                    val encoded = socketManager.receive()
+                    val framePacket = FramePacket.decode(encoded ?: return@launch) ?: return@launch
+
+                    onFrameReceived(framePacket.payload)
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }

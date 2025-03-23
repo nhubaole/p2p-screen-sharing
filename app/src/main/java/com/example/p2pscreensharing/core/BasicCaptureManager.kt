@@ -9,6 +9,7 @@ import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.os.Handler
 import android.os.HandlerThread
+import com.example.p2pscreensharing.data.model.FramePacket
 import java.io.ByteArrayOutputStream
 
 class BasicCaptureManager(
@@ -42,9 +43,18 @@ class BasicCaptureManager(
 
         imageReader?.setOnImageAvailableListener({ reader ->
             val image = reader.acquireLatestImage() ?: return@setOnImageAvailableListener
-            val frameBytes = convertImageToByteArray(image)
+            val jpegBytes = convertImageToByteArray(image)
             image.close()
-            onFrameCaptured(frameBytes)
+
+            val packet = FramePacket(
+                timestamp = System.currentTimeMillis(),
+                width = screenWidth,
+                height = screenHeight,
+                payload = jpegBytes
+            )
+            val encoded = FramePacket.encode(packet)
+
+            onFrameCaptured(encoded)
         }, handler)
     }
 
