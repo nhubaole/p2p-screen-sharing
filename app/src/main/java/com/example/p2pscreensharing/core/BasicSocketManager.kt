@@ -44,25 +44,28 @@ class BasicSocketManager : SocketManager {
     }
 
     override suspend fun connectToHost(ip: String, port: Int) = withContext(Dispatchers.IO) {
-        Log.d("LogSocket", "Connecting on port $port ip ${ip}")
         socket = Socket(ip, port)
+
+        Log.d("LogSocket", "Connecting on port $port ip ${ip}")
 
         setupStreams()
     }
 
-    override suspend fun send(data: ByteArray): Unit = withContext(Dispatchers.IO) {
+    override suspend fun sendBytes(data: ByteArray): Unit = withContext(Dispatchers.IO) {
         try {
             val length = data.size
             val lengthBytes = ByteBuffer.allocate(4).putInt(length).array()
+
             outputStream?.write(lengthBytes)
             outputStream?.write(data)
+
             outputStream?.flush()
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
-    override suspend fun receive(): ByteArray? = withContext(Dispatchers.IO) {
+    override suspend fun receiveBytes(): ByteArray? = withContext(Dispatchers.IO) {
         try {
             val lengthBytes = ByteArray(4)
             val lengthRead = inputStream?.readFully(lengthBytes) ?: return@withContext null
@@ -94,7 +97,7 @@ class BasicSocketManager : SocketManager {
         inputStream = socket?.getInputStream()
     }
 
-    fun InputStream.readFully(buffer: ByteArray): Int {
+    private fun InputStream.readFully(buffer: ByteArray): Int {
         var bytesRead = 0
         while (bytesRead < buffer.size) {
             val result = this.read(buffer, bytesRead, buffer.size - bytesRead)
@@ -104,7 +107,7 @@ class BasicSocketManager : SocketManager {
         return bytesRead
     }
 
-    fun getLocalIpAddress(): String? {
+    private fun getLocalIpAddress(): String? {
         return try {
             val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
             interfaces.toList().flatMap { it.inetAddresses.toList() }

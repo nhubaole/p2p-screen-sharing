@@ -9,11 +9,29 @@ import com.example.p2pscreensharing.domain.usecase.*
 
 object AppContainer {
 
-    // --- Singleton instance ---
-    // TODO: sửa theo feedback
-    val socketManager: SocketManager by lazy { BasicSocketManager() }
+    private var socketManagerInstance: SocketManager? = null
+    fun getSocketManager(): SocketManager {
+        if (socketManagerInstance == null) {
+            socketManagerInstance = BasicSocketManager()
+        }
+        return socketManagerInstance!!
+    }
 
-    // --- Runtime-created dependencies ---
+    private var signalingServiceInstance: SignalingService? = null
+    fun getSignalingService(): SignalingService {
+        if (signalingServiceInstance == null) {
+            signalingServiceInstance = SignalingServiceReal(getSocketManager())
+        }
+        return signalingServiceInstance!!
+    }
+
+    private var signalingRepoInstance: SignalingRepository? = null
+    fun getSignalingRepository(): SignalingRepository {
+        if (signalingRepoInstance == null) {
+            signalingRepoInstance = SignalingRepositoryImpl(getSignalingService())
+        }
+        return signalingRepoInstance!!
+    }
 
     fun createCaptureManager(
         mediaProjection: MediaProjection,
@@ -24,49 +42,25 @@ object AppContainer {
         return BasicCaptureManager(mediaProjection, screenWidth, screenHeight, screenDensity)
     }
 
-    fun createStreamingService(
-        captureManager: CaptureManager? = null
-    ): StreamingService {
-        return StreamingServiceReal(socketManager, captureManager)
+    fun createStreamingService(captureManager: CaptureManager?): StreamingService {
+        return StreamingServiceReal(getSocketManager(), captureManager)
     }
 
-    fun createStreamingRepository(streamingService: StreamingService): StreamingRepository {
-        return StreamingRepositoryImpl(streamingService)
+    fun createStreamingRepository(service: StreamingService): StreamingRepository {
+        return StreamingRepositoryImpl(service)
     }
 
-    fun createSignalingService(): SignalingService {
-        return SignalingServiceReal(socketManager)
-    }
+    fun createStartStreamingUseCase(repo: StreamingRepository) = StartStreamingUseCase(repo)
 
-    fun createSignalingRepository(): SignalingRepository {
-        return SignalingRepositoryImpl(createSignalingService())
-    }
+    fun createStopStreamingUseCase(repo: StreamingRepository) = StopStreamingUseCase(repo)
 
-    fun createStartStreamingUseCase(repo: StreamingRepository): StartStreamingUseCase {
-        return StartStreamingUseCase(repo)
-    }
+    fun createStartReceivingUseCase(repo: StreamingRepository) = StartReceivingUseCase(repo)
 
-    fun createStopStreamingUseCase(repo: StreamingRepository): StopStreamingUseCase {
-        return StopStreamingUseCase(repo)
-    }
+    fun createStopReceivingUseCase(repo: StreamingRepository) = StopReceivingUseCase(repo)
 
-    fun createStartReceivingUseCase(repo: StreamingRepository): StartReceivingUseCase {
-        return StartReceivingUseCase(repo)
-    }
+    fun createCloseConnectionUseCase(repo: StreamingRepository) = CloseConnectionUseCase(repo)
 
-    fun createStopReceivingUseCase(repo: StreamingRepository): StopReceivingUseCase {
-        return StopReceivingUseCase(repo)
-    }
+    fun createStartSocketServerUseCase(repo: SignalingRepository) = StartSocketServerUseCase(repo)
 
-    fun createCloseConnectionUseCase(repo: StreamingRepository): CloseConnectionUseCase {
-        return CloseConnectionUseCase(repo)
-    }
-
-    fun createStartSocketServerUseCase(repo: SignalingRepository): StartSocketServerUseCase {
-        return StartSocketServerUseCase(repo)
-    }
-
-    fun createConnectToPeerUseCase(repo: SignalingRepository): ConnectToPeerUseCase {
-        return ConnectToPeerUseCase(repo)
-    }
+    fun createConnectToPeerUseCase(repo: SignalingRepository) = ConnectToPeerUseCase(repo)
 }

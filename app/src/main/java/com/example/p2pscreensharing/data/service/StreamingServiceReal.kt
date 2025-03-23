@@ -22,9 +22,12 @@ class StreamingServiceReal(
         captureManager?.startCapturingFrames { frame ->
             streamingJob = CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    Log.d("LogSocket", "send frame hex = ${frame.joinToString("") { "%02X".format(it) }}")
+                    Log.d(
+                        "LogSocket",
+                        "send frame hex = ${frame.joinToString("") { "%02X".format(it) }}"
+                    )
 
-                    socketManager.send(frame)
+                    socketManager.sendBytes(frame)
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -42,7 +45,7 @@ class StreamingServiceReal(
         receivingJob = CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
                 try {
-                    val encoded = socketManager.receive()
+                    val encoded = socketManager.receiveBytes()
                     val framePacket = FramePacket.decode(encoded ?: return@launch) ?: return@launch
 
                     onFrameReceived(framePacket.payload)

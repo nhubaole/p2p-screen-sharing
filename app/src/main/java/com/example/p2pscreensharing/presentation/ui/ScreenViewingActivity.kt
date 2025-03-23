@@ -50,9 +50,9 @@ class ScreenViewingActivity : AppCompatActivity() {
     }
 
     private fun injectDependencies() {
-        val streamingService = AppContainer.createStreamingService()
+        val streamingService = AppContainer.createStreamingService(captureManager = null)
         val streamingRepo = AppContainer.createStreamingRepository(streamingService)
-        val signalingRepo = AppContainer.createSignalingRepository()
+        val signalingRepo = AppContainer.getSignalingRepository()
 
         val startReceiving = AppContainer.createStartReceivingUseCase(streamingRepo)
         val stopReceiving = AppContainer.createStopReceivingUseCase(streamingRepo)

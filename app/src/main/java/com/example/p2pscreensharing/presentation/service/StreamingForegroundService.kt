@@ -37,7 +37,7 @@ class StreamingForegroundService : Service() {
         return NotificationCompat.Builder(this, channelId)
             .setContentTitle("Screen sharing")
             .setContentText("Your screen is being shared")
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // change to your icon
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
             .build()
     }
 }

@@ -59,6 +59,8 @@ class ScreenSharingActivity : AppCompatActivity() {
             }
 
             injectDependencies()
+
+            connectAndStartSharing()
         }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -112,7 +114,7 @@ class ScreenSharingActivity : AppCompatActivity() {
 
         val streamingService = AppContainer.createStreamingService(captureManager)
         val streamingRepo = AppContainer.createStreamingRepository(streamingService)
-        val signalingRepo = AppContainer.createSignalingRepository()
+        val signalingRepo = AppContainer.getSignalingRepository()
 
         val startStreaming = AppContainer.createStartStreamingUseCase(streamingRepo)
         val stopStreaming = AppContainer.createStopStreamingUseCase(streamingRepo)
@@ -125,10 +127,6 @@ class ScreenSharingActivity : AppCompatActivity() {
             closeConnection = closeConnection,
             connectToPeer = connectToPeer
         )
-
-        val viewerIp = intent.getStringExtra("viewer_ip") ?: ""
-        val viewerPort = intent.getIntExtra("viewer_port", 0)
-        viewModel.connectAndStartSharing(viewerIp, viewerPort)
     }
 
     private fun initViews() {
@@ -149,5 +147,14 @@ class ScreenSharingActivity : AppCompatActivity() {
         val projectionManager =
             getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         mediaProjectionLauncher.launch(projectionManager.createScreenCaptureIntent())
+    }
+
+    private fun connectAndStartSharing() {
+        try {
+            viewModel.connectAndStartSharing(viewerIp, viewerPort)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            finish()
+        }
     }
 }

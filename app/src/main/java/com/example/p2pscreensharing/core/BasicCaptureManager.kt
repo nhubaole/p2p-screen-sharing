@@ -65,7 +65,6 @@ class BasicCaptureManager(
         mediaProjection.stop()
     }
 
-    // TODO: move to Utils
     private fun convertImageToByteArray(image: Image): ByteArray {
         val planes = image.planes
         val buffer = planes[0].buffer
