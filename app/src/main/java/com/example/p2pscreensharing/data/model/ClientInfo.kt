@@ -5,7 +5,7 @@ enum class PeerRole {
 }
 
 data class ClientInfo(
-    val id: String,
+    val id: String?,
     val role: PeerRole,
     val ip: String,
     val port: Int

@@ -15,7 +15,7 @@ class MainActivity : AppCompatActivity() {
         val btnView = findViewById<Button>(R.id.btnViewScreen)
 
         btnShare.setOnClickListener {
-            val viewerIp = "192.168.66.220"
+            val viewerIp = "192.168.1.233"
             val viewerPort = 8080
 
             val intent = Intent(this, ScreenSharingActivity::class.java).apply {

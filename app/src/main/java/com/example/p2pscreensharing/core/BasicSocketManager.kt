@@ -1,12 +1,15 @@
 package com.example.p2pscreensharing.core
 
 import android.util.Log
+import com.example.p2pscreensharing.data.model.ClientInfo
+import com.example.p2pscreensharing.data.model.PeerRole
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.ServerSocket
 import java.net.Socket
+import java.net.SocketException
 import java.nio.ByteBuffer
 
 class BasicSocketManager : SocketManager {
@@ -15,14 +18,29 @@ class BasicSocketManager : SocketManager {
     private var outputStream: OutputStream? = null
     private var inputStream: InputStream? = null
 
-    override suspend fun startServer(port: Int) = withContext(Dispatchers.IO) {
+    override suspend fun startServer(
+        port: Int,
+        onReady: (ClientInfo?) -> Unit
+    ): Unit = withContext(Dispatchers.IO) {
         serverSocket = ServerSocket(port)
-        Log.d("LogSocket", "Listening on port $port ip ${getLocalIpAddress()}")
 
-        socket = serverSocket?.accept()
-        Log.d("LogSocket", "Client connected!")
+        onReady(
+            ClientInfo(
+                id = null,
+                ip = getLocalIpAddress().orEmpty(),
+                port = port,
+                role = PeerRole.RECEIVER
+            )
+        )
 
-        setupStreams()
+        try {
+            socket = serverSocket?.accept()
+            Log.d("LogSocket", "Client connected!")
+
+            setupStreams()
+        } catch (e: SocketException) {
+            Log.w("LogSocket", "Server socket was closed, accept aborted.")
+        }
     }
 
     override suspend fun connectToHost(ip: String, port: Int) = withContext(Dispatchers.IO) {
@@ -62,8 +80,8 @@ class BasicSocketManager : SocketManager {
 
     override fun closeConnection() {
         try {
-            socket?.close()
             serverSocket?.close()
+            socket?.close()
             inputStream?.close()
             outputStream?.close()
         } catch (e: Exception) {

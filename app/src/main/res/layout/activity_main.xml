@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="24dp"
+    android:padding="30dp"
     android:background="@android:color/white">
 
     <TextView
@@ -13,25 +13,30 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="What do you want to do?"
-        android:textSize="18sp"
+        android:textSize="20sp"
         android:textStyle="bold"
+        android:textColor="#333333"
         android:layout_marginBottom="32dp" />
 
     <Button
         android:id="@+id/btnShareScreen"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Share my screen"
+        android:textSize="16sp"
+        android:textColor="@android:color/white"
         android:layout_marginBottom="16dp"
-        android:paddingLeft="32dp"
-        android:paddingRight="32dp" />
+        android:padding="16dp"
+        android:background="@drawable/rounded_button_blue" />
 
     <Button
         android:id="@+id/btnViewScreen"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="View other's screen"
-        android:paddingLeft="32dp"
-        android:paddingRight="32dp" />
+        android:textSize="16sp"
+        android:textColor="@android:color/white"
+        android:padding="16dp"
+        android:background="@drawable/rounded_button_blue" />
 
 </LinearLayout>

@@ -19,36 +19,38 @@ class ScreenViewingActivity : AppCompatActivity() {
     private lateinit var layoutViewing: View
     private lateinit var imgSharedScreen: ImageView
     private lateinit var btnStopViewing: Button
+    private lateinit var btnStopViewingWaiting: Button
     private lateinit var tvViewerId: TextView
 
     private var hasReceivedFirstFrame = false
+    private var port = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_screen_viewing)
 
-        // --- Get port from Intent ---
-        val port = intent.getIntExtra("listen_port", 0)
+        getConfigs()
+        injectDependencies()
+        initViews()
+        initObservers()
+        startScreenViewing()
+    }
+
+    override fun onDestroy() {
+        viewModel.stopViewing()
+        super.onDestroy()
+    }
+
+    private fun getConfigs() {
+        port = intent.getIntExtra("listen_port", 0)
         if (port == 0) {
             finish()
             return
         }
+    }
 
-        // --- UI binding ---
-        layoutWaiting = findViewById(R.id.layoutWaiting)
-        layoutViewing = findViewById(R.id.layoutViewing)
-        imgSharedScreen = findViewById(R.id.imgSharedScreen)
-        btnStopViewing = findViewById(R.id.btnStopViewing)
-        tvViewerId = findViewById(R.id.tvViewerId)
-
-        layoutWaiting.visibility = View.VISIBLE
-        layoutViewing.visibility = View.GONE
-        imgSharedScreen.visibility = View.GONE
-
-        tvViewerId.text = port.toString()
-
-        // --- Manual DI ---
-        val streamingService = AppContainer.createStreamingService() // no CaptureManager
+    private fun injectDependencies() {
+        val streamingService = AppContainer.createStreamingService()
         val streamingRepo = AppContainer.createStreamingRepository(streamingService)
         val signalingRepo = AppContainer.createSignalingRepository()
 
@@ -63,32 +65,51 @@ class ScreenViewingActivity : AppCompatActivity() {
             closeConnection = closeConnection,
             startSocketServer = startSocketServer
         )
+    }
 
-        // --- Observe frame and show ---
-        viewModel.frameResult.observe(this) { frameBytes ->
-            if (!hasReceivedFirstFrame) {
-                hasReceivedFirstFrame = true
-                layoutWaiting.visibility = View.GONE
-                layoutViewing.visibility = View.VISIBLE
-                imgSharedScreen.visibility = View.VISIBLE
-            }
+    private fun initViews() {
+        layoutWaiting = findViewById(R.id.layoutWaiting)
+        layoutViewing = findViewById(R.id.layoutViewing)
+        imgSharedScreen = findViewById(R.id.imgSharedScreen)
+        btnStopViewing = findViewById(R.id.btnStopViewing)
+        btnStopViewingWaiting = findViewById(R.id.btnStopViewing_Waiting)
+        tvViewerId = findViewById(R.id.tvViewerId)
 
-            val bitmap = BitmapFactory.decodeByteArray(frameBytes, 0, frameBytes.size)
-            imgSharedScreen.setImageBitmap(bitmap)
+        layoutWaiting.visibility = View.VISIBLE
+        layoutViewing.visibility = View.GONE
+        imgSharedScreen.visibility = View.GONE
+
+        btnStopViewing.setOnClickListener {
+            viewModel.stopViewing()
+            finish()
         }
 
-        // --- Start listening for screen sharing ---
-        viewModel.startViewing(port)
-
-        // --- Stop button ---
-        btnStopViewing.setOnClickListener {
+        btnStopViewingWaiting.setOnClickListener {
             viewModel.stopViewing()
             finish()
         }
     }
 
-    override fun onDestroy() {
-        viewModel.stopViewing()
-        super.onDestroy()
+    private fun initObservers() {
+        viewModel.apply {
+            frameResult.observe(this@ScreenViewingActivity) { frameBytes ->
+                if (!hasReceivedFirstFrame) {
+                    hasReceivedFirstFrame = true
+                    layoutWaiting.visibility = View.GONE
+                    layoutViewing.visibility = View.VISIBLE
+                    imgSharedScreen.visibility = View.VISIBLE
+                }
+
+                val bitmap = BitmapFactory.decodeByteArray(frameBytes, 0, frameBytes.size)
+                imgSharedScreen.setImageBitmap(bitmap)
+            }
+            clientInfo.observe(this@ScreenViewingActivity) { clientInfo ->
+                tvViewerId.text = clientInfo?.ip
+            }
+        }
+    }
+
+    private fun startScreenViewing() {
+        viewModel.startViewing(port)
     }
 }
