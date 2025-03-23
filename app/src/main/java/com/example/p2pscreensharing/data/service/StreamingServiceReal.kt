@@ -1,5 +1,6 @@
 package com.example.p2pscreensharing.data.service
 
+import android.util.Log
 import com.example.p2pscreensharing.core.CaptureManager
 import com.example.p2pscreensharing.core.SocketManager
 import com.example.p2pscreensharing.data.model.FramePacket
@@ -21,6 +22,8 @@ class StreamingServiceReal(
         captureManager?.startCapturingFrames { frame ->
             streamingJob = CoroutineScope(Dispatchers.IO).launch {
                 try {
+                    Log.d("LogSocket", "send frame hex = ${frame.joinToString("") { "%02X".format(it) }}")
+
                     socketManager.send(frame)
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -43,6 +46,8 @@ class StreamingServiceReal(
                     val framePacket = FramePacket.decode(encoded ?: return@launch) ?: return@launch
 
                     onFrameReceived(framePacket.payload)
+
+                    Log.d("LogSocket", "onFrameReceived")
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }

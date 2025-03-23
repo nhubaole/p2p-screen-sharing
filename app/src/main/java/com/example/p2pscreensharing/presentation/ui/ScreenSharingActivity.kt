@@ -2,16 +2,23 @@ package com.example.p2pscreensharing.presentation.ui
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
+import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.DisplayMetrics
+import android.util.Log
 import android.widget.Button
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import com.example.p2pscreensharing.R
 import com.example.p2pscreensharing.di.AppContainer
+import com.example.p2pscreensharing.presentation.service.StreamingForegroundService
 import com.example.p2pscreensharing.presentation.viewmodel.ScreenSharingViewModel
 
 class ScreenSharingActivity : AppCompatActivity() {
@@ -19,9 +26,10 @@ class ScreenSharingActivity : AppCompatActivity() {
     private lateinit var viewModel: ScreenSharingViewModel
     private var mediaProjection: MediaProjection? = null
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private val mediaProjectionLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode != Activity.RESULT_OK || result.data == null) {
+            if (result.resultCode != Activity.RESULT_OK) {
                 Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
                 finish()
                 return@registerForActivityResult
@@ -29,6 +37,13 @@ class ScreenSharingActivity : AppCompatActivity() {
 
             val projectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
             mediaProjection = projectionManager.getMediaProjection(result.resultCode, result.data!!)
+
+            mediaProjection?.registerCallback(object : MediaProjection.Callback() {
+                override fun onStop() {
+                    super.onStop()
+                    Log.d("MediaProjection", "Stopped by system or user")
+                }
+            }, Handler(Looper.getMainLooper()))
 
             if (mediaProjection == null) {
                 Toast.makeText(this, "MediaProjection is null", Toast.LENGTH_SHORT).show()
@@ -39,6 +54,7 @@ class ScreenSharingActivity : AppCompatActivity() {
             setupScreenSharing()
         }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_screen_sharing)
@@ -51,6 +67,9 @@ class ScreenSharingActivity : AppCompatActivity() {
             finish()
             return
         }
+
+        val serviceIntent = Intent(this, StreamingForegroundService::class.java)
+        startForegroundService(serviceIntent)
 
         // Step 1: Request media projection permission
         val projectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
