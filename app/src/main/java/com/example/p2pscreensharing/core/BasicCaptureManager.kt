@@ -50,7 +50,7 @@ class BasicCaptureManager(
                 timestamp = System.currentTimeMillis(),
                 width = screenWidth,
                 height = screenHeight,
-                payload = jpegBytes.copyOfRange(0, 8000)
+                payload = jpegBytes
             )
             val encoded = FramePacket.encode(packet)
 
@@ -80,7 +80,7 @@ class BasicCaptureManager(
         bitmap.copyPixelsFromBuffer(buffer)
 
         val outputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 50, outputStream)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 20, outputStream)
         return outputStream.toByteArray()
     }
 }

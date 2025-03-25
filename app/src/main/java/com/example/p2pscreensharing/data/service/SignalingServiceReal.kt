@@ -10,8 +10,4 @@ class SignalingServiceReal(
     override suspend fun startSocketServer(port: Int, onReady: (ClientInfo?) -> Unit) {
         socketManager.startServer(port, onReady)
     }
-
-    override suspend fun connectToPeer(ip: String, port: Int) {
-        socketManager.connectToHost(ip, port)
-    }
 }

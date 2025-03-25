@@ -46,13 +46,24 @@ class StreamingServiceReal(
             while (isActive) {
                 try {
                     val encoded = socketManager.receiveBytes()
-                    val framePacket = FramePacket.decode(encoded ?: return@launch) ?: return@launch
+
+                    if (encoded == null) {
+                        Log.d("LogSocket", "Waiting for more chunks...")
+                        continue
+                    }
+
+                    val framePacket = FramePacket.decode(encoded)
+                    if (framePacket == null) {
+                        Log.w("LogSocket", "Failed to decode FramePacket")
+                        continue
+                    }
+
+                    Log.d("LogSocket", "FramePacket received and decoded, size=${framePacket.payload.size}")
 
                     onFrameReceived(framePacket.payload)
 
-                    Log.d("LogSocket", "onFrameReceived")
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.e("LogSocket", "Exception in startReceiving(): ${e.message}", e)
                 }
             }
         }

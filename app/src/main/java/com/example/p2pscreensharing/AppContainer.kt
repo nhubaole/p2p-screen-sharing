@@ -61,6 +61,4 @@ object AppContainer {
     fun createCloseConnectionUseCase(repo: StreamingRepository) = CloseConnectionUseCase(repo)
 
     fun createStartSocketServerUseCase(repo: SignalingRepository) = StartSocketServerUseCase(repo)
-
-    fun createConnectToPeerUseCase(repo: SignalingRepository) = ConnectToPeerUseCase(repo)
 }

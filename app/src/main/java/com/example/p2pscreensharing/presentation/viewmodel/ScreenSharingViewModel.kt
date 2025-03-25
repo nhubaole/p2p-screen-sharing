@@ -3,7 +3,6 @@ package com.example.p2pscreensharing.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.p2pscreensharing.domain.usecase.CloseConnectionUseCase
-import com.example.p2pscreensharing.domain.usecase.ConnectToPeerUseCase
 import com.example.p2pscreensharing.domain.usecase.StartStreamingUseCase
 import com.example.p2pscreensharing.domain.usecase.StopStreamingUseCase
 import kotlinx.coroutines.launch
