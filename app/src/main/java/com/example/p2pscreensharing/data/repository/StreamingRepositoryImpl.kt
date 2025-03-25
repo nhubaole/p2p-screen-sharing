@@ -6,8 +6,8 @@ import com.example.p2pscreensharing.domain.repository.StreamingRepository
 class StreamingRepositoryImpl(
     private val streamingService: StreamingService
 ) : StreamingRepository {
-    override fun startStreaming() {
-        streamingService.startStreaming()
+    override fun startStreaming(ip: String?, port: Int?) {
+        streamingService.startStreaming(ip, port)
     }
 
     override fun stopStreaming() {

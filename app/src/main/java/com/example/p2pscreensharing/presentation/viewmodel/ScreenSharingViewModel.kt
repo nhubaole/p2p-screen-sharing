@@ -9,16 +9,14 @@ import com.example.p2pscreensharing.domain.usecase.StopStreamingUseCase
 import kotlinx.coroutines.launch
 
 class ScreenSharingViewModel(
-    private val connectToPeer: ConnectToPeerUseCase,
     private val startStreaming: StartStreamingUseCase,
     private val stopStreaming: StopStreamingUseCase,
     private val closeConnection: CloseConnectionUseCase
 ) : ViewModel() {
 
-    fun connectAndStartSharing(ip: String, port: Int) {
+    fun startSharing(ip: String?, port: Int?) {
         viewModelScope.launch {
-            connectToPeer(ip, port)
-            startStreaming()
+            startStreaming(ip, port)
         }
     }
 

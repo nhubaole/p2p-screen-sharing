@@ -30,6 +30,8 @@ data class FramePacket(
         fun decode(data: ByteArray): FramePacket? {
             val buffer = ByteBuffer.wrap(data).order(ByteOrder.BIG_ENDIAN)
 
+            if (data.size < 18) return null
+
             val magic = buffer.short
             if (magic != MAGIC_HEADER) return null
 

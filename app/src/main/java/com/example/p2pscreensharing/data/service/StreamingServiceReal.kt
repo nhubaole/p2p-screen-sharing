@@ -18,16 +18,16 @@ class StreamingServiceReal(
     private var streamingJob: Job? = null
     private var receivingJob: Job? = null
 
-    override fun startStreaming() {
+    override fun startStreaming(ip: String?, port: Int?) {
         captureManager?.startCapturingFrames { frame ->
             streamingJob = CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    Log.d(
-                        "LogSocket",
-                        "send frame hex = ${frame.joinToString("") { "%02X".format(it) }}"
-                    )
+//                    Log.d(
+//                        "LogSocket",
+//                        "send frame hex = ${frame.joinToString("") { "%02X".format(it) }}"
+//                    )
 
-                    socketManager.sendBytes(frame)
+                    socketManager.sendBytes(frame, ip = ip, port = port)
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }

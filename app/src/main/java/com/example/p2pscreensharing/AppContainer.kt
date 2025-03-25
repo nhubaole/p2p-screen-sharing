@@ -12,7 +12,7 @@ object AppContainer {
     private var socketManagerInstance: SocketManager? = null
     fun getSocketManager(): SocketManager {
         if (socketManagerInstance == null) {
-            socketManagerInstance = BasicSocketManager()
+            socketManagerInstance = UdpSocketManager()
         }
         return socketManagerInstance!!
     }

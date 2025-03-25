@@ -50,7 +50,7 @@ class BasicCaptureManager(
                 timestamp = System.currentTimeMillis(),
                 width = screenWidth,
                 height = screenHeight,
-                payload = jpegBytes
+                payload = jpegBytes.copyOfRange(0, 8000)
             )
             val encoded = FramePacket.encode(packet)
 

@@ -12,7 +12,7 @@ import java.net.Socket
 import java.net.SocketException
 import java.nio.ByteBuffer
 
-class BasicSocketManager : SocketManager {
+class TcpSocketManager : SocketManager {
     private var socket: Socket? = null
     private var serverSocket: ServerSocket? = null
     private var outputStream: OutputStream? = null
@@ -51,7 +51,7 @@ class BasicSocketManager : SocketManager {
         setupStreams()
     }
 
-    override suspend fun sendBytes(data: ByteArray): Unit = withContext(Dispatchers.IO) {
+    override suspend fun sendBytes(data: ByteArray, ip: String?, port: Int?): Unit = withContext(Dispatchers.IO) {
         try {
             val length = data.size
             val lengthBytes = ByteBuffer.allocate(4).putInt(length).array()
