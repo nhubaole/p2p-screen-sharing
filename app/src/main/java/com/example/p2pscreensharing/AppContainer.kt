@@ -33,13 +33,12 @@ object AppContainer {
         return signalingRepoInstance!!
     }
 
-    fun createCaptureManager(
-        mediaProjection: MediaProjection,
-        screenWidth: Int,
-        screenHeight: Int,
-        screenDensity: Int
-    ): CaptureManager {
-        return BasicCaptureManager(mediaProjection, screenWidth, screenHeight, screenDensity)
+    private var captureManagerInstance: CaptureManager? = null
+    fun getCaptureManager(): CaptureManager {
+        if (captureManagerInstance == null) {
+            captureManagerInstance = BasicCaptureManager()
+        }
+        return captureManagerInstance!!
     }
 
     fun createStreamingService(captureManager: CaptureManager?): StreamingService {

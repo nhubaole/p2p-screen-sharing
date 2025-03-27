@@ -1,5 +1,8 @@
 package com.example.p2pscreensharing.core
 
+import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
@@ -7,58 +10,76 @@ import android.hardware.display.VirtualDisplay
 import android.media.Image
 import android.media.ImageReader
 import android.media.projection.MediaProjection
+import android.media.projection.MediaProjectionManager
 import android.os.Handler
 import android.os.HandlerThread
+import android.os.Looper
 import com.example.p2pscreensharing.data.model.FramePacket
 import java.io.ByteArrayOutputStream
 
-class BasicCaptureManager(
-    private val mediaProjection: MediaProjection,
-    private val screenWidth: Int,
-    private val screenHeight: Int,
-    private val screenDensity: Int
-) : CaptureManager {
+class BasicCaptureManager : CaptureManager {
 
+    private lateinit var mediaProjection: MediaProjection
     private var imageReader: ImageReader? = null
     private var virtualDisplay: VirtualDisplay? = null
     private var handlerThread: HandlerThread? = null
     private var handler: Handler? = null
+    private var config: CaptureConfig? = null
 
-    override fun startCapturingFrames(onFrameCaptured: (ByteArray) -> Unit) {
-        handlerThread = HandlerThread("ScreenCaptureThread").also { it.start() }
-        handler = Handler(handlerThread!!.looper)
+    @Volatile
+    private var isCapturing = false
 
-        imageReader = ImageReader.newInstance(screenWidth, screenHeight, PixelFormat.RGBA_8888, 2)
+    @SuppressLint("ServiceCast")
+    override fun initProjection(resultCode: Int, data: Intent, config: CaptureConfig) {
+        this.config = config
+        val manager = config.context.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        mediaProjection = manager.getMediaProjection(resultCode, data)
+
+        mediaProjection.registerCallback(object : MediaProjection.Callback() {
+            override fun onStop() {
+            }
+        }, Handler(Looper.getMainLooper()))
+
+        imageReader = ImageReader.newInstance(config.width, config.height, PixelFormat.RGBA_8888, 2)
 
         virtualDisplay = mediaProjection.createVirtualDisplay(
-            "ScreenCapture",
-            screenWidth,
-            screenHeight,
-            screenDensity,
+            "ScreenSharing",
+            config.width, config.height, config.density,
             DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-            imageReader!!.surface,
-            null,
-            handler
+            imageReader?.surface, null, null
         )
 
+        handlerThread = HandlerThread("CaptureThread").also { it.start() }
+        handler = Handler(handlerThread!!.looper)
+    }
+
+    override fun startCapturingFrames(onFrameCaptured: (ByteArray) -> Unit) {
+        isCapturing = true
+
         imageReader?.setOnImageAvailableListener({ reader ->
+            if (!isCapturing) return@setOnImageAvailableListener
+
             val image = reader.acquireLatestImage() ?: return@setOnImageAvailableListener
-            val jpegBytes = convertImageToByteArray(image)
-            image.close()
 
-            val packet = FramePacket(
-//                timestamp = System.currentTimeMillis(),
-//                width = screenWidth,
-//                height = screenHeight,
-                payload = jpegBytes
-            )
-            val encoded = FramePacket.encode(packet)
+            try {
+                val jpegBytes = convertImageToByteArray(image)
+                val packet = FramePacket(payload = jpegBytes)
+                val encoded = FramePacket.encode(packet)
+                onFrameCaptured(encoded)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                image.close()
+            }
 
-            onFrameCaptured(encoded)
         }, handler)
     }
 
     override fun stopCapturing() {
+        isCapturing = false
+
+        imageReader?.setOnImageAvailableListener(null, null)
+
         imageReader?.close()
         virtualDisplay?.release()
         handlerThread?.quitSafely()
@@ -70,17 +91,17 @@ class BasicCaptureManager(
         val buffer = planes[0].buffer
         val pixelStride = planes[0].pixelStride
         val rowStride = planes[0].rowStride
-        val rowPadding = rowStride - pixelStride * screenWidth
+        val rowPadding = rowStride - pixelStride * image.width
 
         val bitmap = Bitmap.createBitmap(
-            screenWidth + rowPadding / pixelStride,
-            screenHeight,
+            image.width + rowPadding / pixelStride,
+            image.height,
             Bitmap.Config.ARGB_8888
         )
         bitmap.copyPixelsFromBuffer(buffer)
 
-        val outputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 20, outputStream)
-        return outputStream.toByteArray()
+        val output = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 20, output)
+        return output.toByteArray()
     }
 }
