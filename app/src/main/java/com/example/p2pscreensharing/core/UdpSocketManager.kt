@@ -35,38 +35,40 @@ class UdpSocketManager : SocketManager {
         )
     }
 
-    override suspend fun sendBytes(data: ByteArray, ip: String?, port: Int?): Unit = withContext(Dispatchers.IO) {
-        if (ip == null || port == null) return@withContext
+    override suspend fun sendBytes(data: ByteArray, ip: String?, port: Int?): Unit =
+        withContext(Dispatchers.IO) {
+            if (ip == null || port == null) return@withContext
 
-        try {
-            val chunkSize = 8192
-            val totalChunks = (data.size + chunkSize - 1) / chunkSize
-            val frameId = System.currentTimeMillis()
+            try {
+                val chunkSize = 8192
+                val totalChunks = (data.size + chunkSize - 1) / chunkSize
+                val frameId = System.currentTimeMillis()
 
-            for (i in 0 until totalChunks) {
-                val start = i * chunkSize
-                val end = minOf(start + chunkSize, data.size)
-                val chunkData = data.copyOfRange(start, end)
+                for (i in 0 until totalChunks) {
+                    val start = i * chunkSize
+                    val end = minOf(start + chunkSize, data.size)
+                    val chunkData = data.copyOfRange(start, end)
 
-                val chunkPacket = FrameChunkPacket(
-                    frameId = frameId,
-                    chunkIndex = i,
-                    totalChunks = totalChunks,
-                    payload = chunkData
-                )
+                    val chunkPacket = FrameChunkPacket(
+                        frameId = frameId,
+                        chunkIndex = i,
+                        totalChunks = totalChunks,
+                        payload = chunkData
+                    )
 
-                val encoded = FrameChunkPacket.encode(chunkPacket)
-                val sendPacket = DatagramPacket(encoded, encoded.size, InetAddress.getByName(ip), port)
+                    val encoded = FrameChunkPacket.encode(chunkPacket)
+                    val sendPacket =
+                        DatagramPacket(encoded, encoded.size, InetAddress.getByName(ip), port)
 
-                sendSocket.send(sendPacket)
+                    sendSocket.send(sendPacket)
 
-                Log.d("LogSocket", "Sent chunk $i/${totalChunks - 1}, size=${encoded.size}")
+                    Log.d("LogSocket", "Sent chunk $i/${totalChunks - 1}, size=${encoded.size}")
+                }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
-    }
 
     override suspend fun receiveBytes(): ByteArray? = withContext(Dispatchers.IO) {
         try {
@@ -84,7 +86,10 @@ class UdpSocketManager : SocketManager {
             val chunkIndex = chunkPacket.chunkIndex
             val totalChunks = chunkPacket.totalChunks
 
-            Log.d("LogSocket", "Chunk received — frameId=$frameId, index=$chunkIndex/$totalChunks, size=${chunkPacket.payload.size}")
+            Log.d(
+                "LogSocket",
+                "Chunk received — frameId=$frameId, index=$chunkIndex/$totalChunks, size=${chunkPacket.payload.size}"
+            )
 
             val frameChunks = chunkBuffer.getOrPut(frameId) { mutableMapOf() }
             frameChunks[chunkIndex] = chunkPacket.payload

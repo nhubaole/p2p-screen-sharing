@@ -114,7 +114,6 @@ class ScreenSharingActivity : AppCompatActivity() {
 
         val streamingService = AppContainer.createStreamingService(captureManager)
         val streamingRepo = AppContainer.createStreamingRepository(streamingService)
-        val signalingRepo = AppContainer.getSignalingRepository()
 
         val startStreaming = AppContainer.createStartStreamingUseCase(streamingRepo)
         val stopStreaming = AppContainer.createStopStreamingUseCase(streamingRepo)

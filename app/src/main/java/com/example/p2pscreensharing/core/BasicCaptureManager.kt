@@ -47,9 +47,9 @@ class BasicCaptureManager(
             image.close()
 
             val packet = FramePacket(
-                timestamp = System.currentTimeMillis(),
-                width = screenWidth,
-                height = screenHeight,
+//                timestamp = System.currentTimeMillis(),
+//                width = screenWidth,
+//                height = screenHeight,
                 payload = jpegBytes
             )
             val encoded = FramePacket.encode(packet)
