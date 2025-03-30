@@ -1,7 +1,8 @@
 package com.example.p2pscreensharing.presentation.ui
 
 import android.app.Activity
-import android.content.*
+import android.content.Context
+import android.content.Intent
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
@@ -12,7 +13,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import com.example.p2pscreensharing.R
-import com.example.p2pscreensharing.presentation.service.StreamingForegroundService
+import com.example.p2pscreensharing.service.StreamingForegroundService
 
 class ScreenSharingActivity : AppCompatActivity() {
 

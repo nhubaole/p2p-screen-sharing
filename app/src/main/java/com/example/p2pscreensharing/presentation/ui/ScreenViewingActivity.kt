@@ -29,8 +29,9 @@ class ScreenViewingActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_screen_viewing)
 
+        viewModel = AppContainer.createScreenViewingViewModel()
+
         getConfigs()
-        injectDependencies()
         initViews()
         initObservers()
         startScreenViewing()
@@ -47,24 +48,6 @@ class ScreenViewingActivity : AppCompatActivity() {
             finish()
             return
         }
-    }
-
-    private fun injectDependencies() {
-        val streamingService = AppContainer.createStreamingService(captureManager = null)
-        val streamingRepo = AppContainer.createStreamingRepository(streamingService)
-        val signalingRepo = AppContainer.getSignalingRepository()
-
-        val startReceiving = AppContainer.createStartReceivingUseCase(streamingRepo)
-        val stopReceiving = AppContainer.createStopReceivingUseCase(streamingRepo)
-        val closeConnection = AppContainer.createCloseConnectionUseCase(streamingRepo)
-        val startSocketServer = AppContainer.createStartSocketServerUseCase(signalingRepo)
-
-        viewModel = ScreenViewingViewModel(
-            startReceiving = startReceiving,
-            stopReceiving = stopReceiving,
-            closeConnection = closeConnection,
-            startSocketServer = startSocketServer
-        )
     }
 
     private fun initViews() {
@@ -103,7 +86,7 @@ class ScreenViewingActivity : AppCompatActivity() {
                 val bitmap = BitmapFactory.decodeByteArray(frameBytes, 0, frameBytes.size)
                 imgSharedScreen.setImageBitmap(bitmap)
             }
-            clientInfo.observe(this@ScreenViewingActivity) { clientInfo ->
+            peerEntity.observe(this@ScreenViewingActivity) { clientInfo ->
                 tvViewerId.text = clientInfo?.ip
             }
         }

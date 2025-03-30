@@ -21,3 +21,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "P2PScreenSharing"
 include(":app")
+include(":domain")
+include(":data")
+include(":core")
+include(":appDependencies")

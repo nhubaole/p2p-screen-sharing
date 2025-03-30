@@ -41,7 +41,7 @@
             </intent-filter>
         </activity>
         <service
-            android:name=".presentation.service.StreamingForegroundService"
+            android:name=".service.StreamingForegroundService"
             android:exported="false"
             android:foregroundServiceType="mediaProjection" />
     </application>
