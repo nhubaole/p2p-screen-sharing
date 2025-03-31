@@ -16,7 +16,6 @@ import com.example.appdependencies.DomainComponents.createStopStreamingUseCase
 import com.example.core.core.BasicCaptureManager
 import com.example.core.core.CaptureConfig
 import com.example.p2pscreensharing.R
-import com.example.p2pscreensharing.di.AppContainer
 
 class StreamingForegroundService : Service() {
 
