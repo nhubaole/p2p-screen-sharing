@@ -38,8 +38,8 @@ class VideoRecorderTest {
         val height = 800
         val file = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "unit_test_record.mp4")
 
-        val recorder = BasicVideoRecoder(width, height, file)
-        recorder.start()
+        val recorder = BasicVideoRecoder()
+        recorder.start(width, height, file)
 
         val bitmap = createBitmap(width, height)
 

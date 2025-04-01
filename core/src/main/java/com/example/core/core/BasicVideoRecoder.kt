@@ -5,13 +5,14 @@ import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
 import android.media.MediaMuxer
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import java.io.File
 
-class BasicVideoRecoder(
-    private val width: Int,
-    private val height: Int,
-    private val outputFile: File
-) : VideoRecorder {
+class BasicVideoRecoder : VideoRecorder {
 
     private var mediaCodec: MediaCodec? = null
 
@@ -21,11 +22,19 @@ class BasicVideoRecoder(
 
     private var isMuxerStarted = false
 
-    private var presentationTimeUs = 0L
-
     private var isRecording = false
 
-    override fun start() {
+    private var presentationTimeUs = 0L
+
+    private var width: Int = 0
+    private var height: Int = 0
+
+    private val recordingScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
+    override fun start(width: Int, height: Int, outputFile: File) {
+        this.width = width
+        this.height = height
+
         val format = MediaFormat.createVideoFormat("video/avc", width, height).apply {
             setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible)
             setInteger(MediaFormat.KEY_BIT_RATE, 2_000_000)
@@ -46,78 +55,99 @@ class BasicVideoRecoder(
     override fun encodeFrame(bitmap: Bitmap) {
         if (!isRecording) return
 
-        val inputBufferIndex = mediaCodec?.dequeueInputBuffer(10000L) ?: return
-        if (inputBufferIndex >= 0) {
-            val inputBuffer = mediaCodec?.getInputBuffer(inputBufferIndex)
-            inputBuffer?.clear()
-
-            val yuv = bitmapToYUV420(bitmap)
-            inputBuffer?.put(yuv)
-
-            presentationTimeUs += 66_666
-            mediaCodec?.queueInputBuffer(inputBufferIndex, 0, yuv.size, presentationTimeUs, 0)
-        }
-
-        val bufferInfo = MediaCodec.BufferInfo()
-        while (true) {
-            val outputIndex = mediaCodec?.dequeueOutputBuffer(bufferInfo, 0) ?: break
-            if (outputIndex >= 0) {
-                val encodedData = mediaCodec?.getOutputBuffer(outputIndex) ?: continue
-                if (bufferInfo.size != 0) {
-                    encodedData.position(bufferInfo.offset)
-                    encodedData.limit(bufferInfo.offset + bufferInfo.size)
-
-                    if (!isMuxerStarted) {
-                        trackIndex = mediaCodec?.outputFormat?.let {
-                            mediaMuxer?.addTrack(it)
-                        } ?: -1
-                        mediaMuxer?.start()
-                        isMuxerStarted = true
-                    }
-
-                    mediaMuxer?.writeSampleData(trackIndex, encodedData, bufferInfo)
-                }
-                mediaCodec?.releaseOutputBuffer(outputIndex, false)
-            } else {
-                break
-            }
+        recordingScope.launch {
+            val resizedBitmap = Bitmap.createScaledBitmap(bitmap, width, height, true)
+            val yuv = bitmapToNV21(resizedBitmap)
+            encodeYUVToVideo(yuv)
         }
     }
 
     override fun stop() {
         isRecording = false
-        mediaCodec?.stop()
-        mediaCodec?.release()
+        recordingScope.cancel()
+
+        mediaCodec?.run {
+            stop()
+            release()
+        }
+        mediaCodec = null
+
         if (isMuxerStarted) {
-            mediaMuxer?.stop()
-            mediaMuxer?.release()
+            mediaMuxer?.run {
+                stop()
+                release()
+            }
+        }
+        mediaMuxer = null
+        isMuxerStarted = false
+    }
+
+    private fun encodeYUVToVideo(yuv: ByteArray) {
+        val codec = mediaCodec ?: return
+        if (!isRecording) return
+
+        val inputBufferIndex = codec.dequeueInputBuffer(10_000L)
+        if (inputBufferIndex >= 0) {
+            val inputBuffer = codec.getInputBuffer(inputBufferIndex) ?: return
+            inputBuffer.clear()
+            inputBuffer.put(yuv)
+            presentationTimeUs += 1_000_000L / 15
+            codec.queueInputBuffer(inputBufferIndex, 0, yuv.size, presentationTimeUs, 0)
+        }
+
+        val bufferInfo = MediaCodec.BufferInfo()
+        while (true) {
+            val outputIndex = codec.dequeueOutputBuffer(bufferInfo, 0)
+            when {
+                outputIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
+                    if (!isMuxerStarted) {
+                        val newFormat = codec.outputFormat
+                        trackIndex = mediaMuxer!!.addTrack(newFormat)
+                        mediaMuxer!!.start()
+                        isMuxerStarted = true
+                    }
+                }
+
+                outputIndex >= 0 -> {
+                    val encodedData = codec.getOutputBuffer(outputIndex) ?: continue
+                    if (bufferInfo.size > 0 && isMuxerStarted) {
+                        encodedData.position(bufferInfo.offset)
+                        encodedData.limit(bufferInfo.offset + bufferInfo.size)
+                        mediaMuxer?.writeSampleData(trackIndex, encodedData, bufferInfo)
+                    }
+                    codec.releaseOutputBuffer(outputIndex, false)
+                }
+
+                else -> break
+            }
         }
     }
 
-    private fun bitmapToYUV420(bitmap: Bitmap): ByteArray {
+    private fun bitmapToNV21(bitmap: Bitmap): ByteArray {
         val argb = IntArray(width * height)
         bitmap.getPixels(argb, 0, width, 0, 0, width, height)
         val yuv = ByteArray(width * height * 3 / 2)
 
         var yIndex = 0
-        var uIndex = width * height
-        var vIndex = uIndex + (uIndex / 4)
+        var uvIndex = width * height
 
         for (j in 0 until height) {
             for (i in 0 until width) {
-                val rgb = argb[j * width + i]
-                val r = (rgb shr 16) and 0xFF
-                val g = (rgb shr 8) and 0xFF
-                val b = rgb and 0xFF
+                val index = j * width + i
+                val color = argb[index]
+
+                val r = (color shr 16) and 0xFF
+                val g = (color shr 8) and 0xFF
+                val b = color and 0xFF
 
                 val y = ((66 * r + 129 * g + 25 * b + 128) shr 8) + 16
                 val u = ((-38 * r - 74 * g + 112 * b + 128) shr 8) + 128
-                val v = ((112 * r - 94 * g - 18 * b + 128) shr 8) + 128
+                val v = ((112 * r - 94 * g - 18 + 128) shr 8) + 128
 
                 yuv[yIndex++] = y.coerceIn(0, 255).toByte()
                 if (j % 2 == 0 && i % 2 == 0) {
-                    yuv[uIndex++] = u.coerceIn(0, 255).toByte()
-                    yuv[vIndex++] = v.coerceIn(0, 255).toByte()
+                    yuv[uvIndex++] = v.coerceIn(0, 255).toByte()
+                    yuv[uvIndex++] = u.coerceIn(0, 255).toByte()
                 }
             }
         }

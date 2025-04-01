@@ -108,9 +108,20 @@
             android:scaleType="fitCenter" />
 
         <Button
+            android:id="@+id/btnToggleRecording"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/rounded_button_red"
+            android:padding="14dp"
+            android:text="Start Recording"
+            android:textColor="@android:color/white" />
+
+        <Button
             android:id="@+id/btnStopViewing"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:background="@drawable/rounded_button_blue"
             android:padding="14dp"
             android:text="Stop viewing"
