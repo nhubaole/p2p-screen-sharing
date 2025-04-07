@@ -1,7 +1,7 @@
 package com.example.appdependencies
 
 import com.example.core.core.BasicCaptureManager
-import com.example.core.core.BasicVideoRecoder
+import com.example.core.core.BasicVideoRecorder
 import com.example.core.core.CaptureManager
 import com.example.core.core.SocketManager
 import com.example.core.core.UdpSocketManager
@@ -28,7 +28,7 @@ object CoreComponents {
 
     fun getVideoRecorder(): VideoRecorder {
         if (!::videoRecorderInstance.isInitialized) {
-            videoRecorderInstance = BasicVideoRecoder()
+            videoRecorderInstance = BasicVideoRecorder()
         }
         return videoRecorderInstance
     }

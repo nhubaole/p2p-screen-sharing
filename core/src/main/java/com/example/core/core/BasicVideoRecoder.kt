@@ -5,6 +5,7 @@ import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
 import android.media.MediaMuxer
+import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -12,7 +13,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import java.io.File
 
-class BasicVideoRecoder : VideoRecorder {
+class BasicVideoRecorder : VideoRecorder {
 
     private var mediaCodec: MediaCodec? = null
 
@@ -56,9 +57,16 @@ class BasicVideoRecoder : VideoRecorder {
         if (!isRecording) return
 
         recordingScope.launch {
+            if (!isRecording) return@launch
+
             val resizedBitmap = Bitmap.createScaledBitmap(bitmap, width, height, true)
             val yuv = bitmapToNV21(resizedBitmap)
-            encodeYUVToVideo(yuv)
+
+            try {
+                encodeYUVToVideo(yuv)
+            } catch (e: IllegalStateException) {
+                Log.e("VideoRecorder", "Codec error during encoding: ${e.message}")
+            }
         }
     }
 
@@ -140,14 +148,14 @@ class BasicVideoRecoder : VideoRecorder {
                 val g = (color shr 8) and 0xFF
                 val b = color and 0xFF
 
-                val y = ((66 * r + 129 * g + 25 * b + 128) shr 8) + 16
-                val u = ((-38 * r - 74 * g + 112 * b + 128) shr 8) + 128
-                val v = ((112 * r - 94 * g - 18 + 128) shr 8) + 128
+                val y = (0.299 * r + 0.587 * g + 0.114 * b).toInt()
+                val u = (-0.169 * r - 0.331 * g + 0.5 * b + 128).toInt()
+                val v = (0.5 * r - 0.419 * g - 0.081 * b + 128).toInt()
 
                 yuv[yIndex++] = y.coerceIn(0, 255).toByte()
                 if (j % 2 == 0 && i % 2 == 0) {
-                    yuv[uvIndex++] = v.coerceIn(0, 255).toByte()
                     yuv[uvIndex++] = u.coerceIn(0, 255).toByte()
+                    yuv[uvIndex++] = v.coerceIn(0, 255).toByte()
                 }
             }
         }

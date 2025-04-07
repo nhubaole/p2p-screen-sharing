@@ -13,7 +13,7 @@ import androidx.core.content.ContextCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.example.core.core.BasicVideoRecoder
+import com.example.core.core.BasicVideoRecorder
 import junit.framework.TestCase.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,7 +38,7 @@ class VideoRecorderTest {
         val height = 800
         val file = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "unit_test_record.mp4")
 
-        val recorder = BasicVideoRecoder()
+        val recorder = BasicVideoRecorder()
         recorder.start(width, height, file)
 
         val bitmap = createBitmap(width, height)

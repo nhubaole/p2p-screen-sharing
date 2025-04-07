@@ -152,16 +152,18 @@ class ScreenViewingActivity : AppCompatActivity() {
                 if (isRecording) {
                     if (!videoRecorderStarted) {
                         videoRecorderStarted = true
+                        val (safeWidth, safeHeight) = scaleDownToMaxSize(bitmap.width, bitmap.height, 720, 1280)
+
                         val outputFile = File(
                             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
                             "shared_screen_record_${System.currentTimeMillis()}.mp4"
                         )
 
-                        Log.d("VideoRecorder", "Start recording: ${bitmap.width}x${bitmap.height}")
+                        Log.d("VideoRecorder", "Start recording: ${safeWidth}x${safeHeight}")
 
                         videoRecorder.start(
-                            width = 640,
-                            height = 1280,
+                            width = safeWidth,
+                            height = safeHeight,
                             outputFile = outputFile
                         )
                     }
@@ -177,5 +179,27 @@ class ScreenViewingActivity : AppCompatActivity() {
 
     private fun startScreenViewing() {
         viewModel.startViewing(port)
+    }
+
+    private fun scaleDownToMaxSize(originalWidth: Int, originalHeight: Int, maxWidth: Int, maxHeight: Int): Pair<Int, Int> {
+        val aspectRatio = originalWidth.toFloat() / originalHeight.toFloat()
+
+        var newWidth = originalWidth
+        var newHeight = originalHeight
+
+        if (originalWidth > maxWidth) {
+            newWidth = maxWidth
+            newHeight = (maxWidth / aspectRatio).toInt()
+        }
+
+        if (newHeight > maxHeight) {
+            newHeight = maxHeight
+            newWidth = (maxHeight * aspectRatio).toInt()
+        }
+
+        newWidth -= newWidth % 16
+        newHeight -= newHeight % 16
+
+        return Pair(newWidth, newHeight)
     }
 }
