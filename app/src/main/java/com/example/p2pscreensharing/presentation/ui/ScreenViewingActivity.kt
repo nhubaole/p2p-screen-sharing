@@ -2,11 +2,11 @@ package com.example.p2pscreensharing.presentation.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
-import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
@@ -15,11 +15,17 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.example.appdependencies.CoreComponents.getVideoRecorder
 import com.example.core.core.VideoRecorder
 import com.example.p2pscreensharing.R
 import com.example.p2pscreensharing.di.AppContainer
 import com.example.p2pscreensharing.presentation.viewmodel.ScreenViewingViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.io.File
 
 class ScreenViewingActivity : AppCompatActivity() {
@@ -38,6 +44,9 @@ class ScreenViewingActivity : AppCompatActivity() {
     private lateinit var btnStopViewing: Button
     private lateinit var btnStopViewingWaiting: Button
     private lateinit var tvViewerId: TextView
+
+    private var latestBitmap: Bitmap? = null
+    private var recordingJob: Job? = null
 
     private var isRecording = false
     private var videoRecorderStarted = false
@@ -121,6 +130,8 @@ class ScreenViewingActivity : AppCompatActivity() {
             } else {
                 videoRecorder.stop()
                 videoRecorderStarted = false
+                recordingJob?.cancel()
+                recordingJob = null
                 btnToggleRecording.text = "Start Recording"
             }
         }
@@ -149,27 +160,29 @@ class ScreenViewingActivity : AppCompatActivity() {
                 val bitmap = BitmapFactory.decodeByteArray(frameBytes, 0, frameBytes.size)
                 imgSharedScreen.setImageBitmap(bitmap)
 
-                if (isRecording) {
-                    if (!videoRecorderStarted) {
-                        videoRecorderStarted = true
-                        val (safeWidth, safeHeight) = scaleDownToMaxSize(bitmap.width, bitmap.height, 720, 1280)
+                latestBitmap = bitmap
 
-                        val outputFile = File(
-                            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                            "shared_screen_record_${System.currentTimeMillis()}.mp4"
-                        )
+                if (!videoRecorderStarted) {
+                    videoRecorderStarted = true
 
-                        Log.d("VideoRecorder", "Start recording: ${safeWidth}x${safeHeight}")
+                    val (safeWidth, safeHeight) = scaleDownToMaxSize(bitmap.width, bitmap.height, 720, 1280)
+                    val outputFile = File(
+                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                        "shared_screen_record_${System.currentTimeMillis()}.mp4"
+                    )
 
-                        videoRecorder.start(
-                            width = safeWidth,
-                            height = safeHeight,
-                            outputFile = outputFile
-                        )
+                    videoRecorder.start(safeWidth, safeHeight, outputFile)
+
+                    recordingJob = lifecycleScope.launch(Dispatchers.Default) {
+                        while (isActive) {
+                            latestBitmap?.let {
+                                videoRecorder.encodeFrame(it)
+                            }
+                            delay(33) // about 30 fps
+                        }
                     }
-
-                    videoRecorder.encodeFrame(bitmap)
                 }
+
             }
             peerEntity.observe(this@ScreenViewingActivity) { clientInfo ->
                 tvViewerId.text = clientInfo?.ip
