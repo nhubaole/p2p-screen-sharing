@@ -2,10 +2,10 @@ package com.example.domain.usecase
 
 import com.example.domain.repository.SignalingRepository
 
-class CloseConnectionUseCase(
+class CloseTcpConnectionUseCase (
     private val repository: SignalingRepository
 ) {
     operator fun invoke() {
-        repository.closeConnection()
+        repository.closeTcpConnection()
     }
 }

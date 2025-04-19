@@ -2,7 +2,7 @@ package com.example.data.service
 
 import android.util.Log
 import com.example.core.core.CaptureManager
-import com.example.core.core.SocketManager
+import com.example.core.core.UdpSocketManager
 import com.example.data.model.FrameChunkPacket
 import com.example.data.model.FramePacket
 import com.example.data.model.encodeToChunks
@@ -13,7 +13,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class StreamingServiceReal(
-    private val socketManager: SocketManager,
+    private val udpSocketManager: UdpSocketManager,
     private val captureManager: CaptureManager? = null,
 ) : StreamingService {
 
@@ -29,7 +29,7 @@ class StreamingServiceReal(
                     val chunkedPackets = framePacket.encodeToChunks()
 
                     chunkedPackets.forEachIndexed { index, chunk ->
-                        socketManager.sendBytes(chunk, ip = ip, port = port)
+                        udpSocketManager.sendBytes(chunk, ip = ip, port = port)
 
                         Log.d(
                             "LogSocket",
@@ -57,7 +57,7 @@ class StreamingServiceReal(
         receivingJob = CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
                 try {
-                    val rawData = socketManager.receiveBytes()
+                    val rawData = udpSocketManager.receiveBytes()
                     if (rawData == null) continue
 
                     val chunkPacket = FrameChunkPacket.decode(rawData) ?: continue
@@ -92,9 +92,5 @@ class StreamingServiceReal(
     override fun stopReceiving() {
         receivingJob?.cancel()
         receivingJob = null
-    }
-
-    override fun closeConnection() {
-        socketManager.closeConnection()
     }
 }

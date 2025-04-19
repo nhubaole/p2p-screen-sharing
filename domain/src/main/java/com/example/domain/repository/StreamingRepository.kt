@@ -10,6 +10,4 @@ interface StreamingRepository {
     fun startReceiving(onFrameReceived: (FrameEntity) -> Unit)
 
     fun stopReceiving()
-
-    fun closeConnection()
 }

@@ -4,9 +4,14 @@ import com.example.appdependencies.DomainComponents.createCloseConnectionUseCase
 import com.example.appdependencies.DomainComponents.createStartReceivingUseCase
 import com.example.appdependencies.DomainComponents.createStartSocketServerUseCase
 import com.example.appdependencies.DomainComponents.createStopReceivingUseCase
+import com.example.p2pscreensharing.presentation.viewmodel.MainViewModel
 import com.example.p2pscreensharing.presentation.viewmodel.ScreenViewingViewModel
 
 object AppContainer {
+
+    fun createMainViewModel() : MainViewModel {
+        return MainViewModel()
+    }
 
     fun createScreenViewingViewModel(): ScreenViewingViewModel {
         return ScreenViewingViewModel(

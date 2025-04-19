@@ -4,4 +4,12 @@ import com.example.domain.entity.PeerEntity
 
 interface SignalingRepository {
     suspend fun startSocketServer(port: Int, onReady: (PeerEntity?) -> Unit)
+
+    suspend fun startTcpSocketServer(port: Int, onReady: (PeerEntity?) -> Unit)
+
+    suspend fun connectToPeer(ip: String, port: Int)
+
+    fun closeConnection()
+
+    fun closeTcpConnection()
 }

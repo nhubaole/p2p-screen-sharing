@@ -6,11 +6,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
-
 
     <application
         android:name=".MyApplication"
@@ -22,29 +23,32 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.P2PScreenSharing"
-        tools:targetApi="31"
-        tools:ignore="ForegroundServicePermission">
+        tools:ignore="ForegroundServicePermission"
+        tools:targetApi="31">
         <activity
-            android:name=".presentation.ui.ScreenViewingActivity"
+            android:name=".presentation.activity.ConnectToPeerActivity"
+            android:exported="false" />
+        <activity
+            android:name=".presentation.activity.ScreenViewingActivity"
             android:exported="false"
-            android:theme="@style/Theme.P2PScreenSharing">
-        </activity>
+            android:theme="@style/Theme.P2PScreenSharing"></activity>
         <activity
-            android:name=".presentation.ui.ScreenSharingActivity"
+            android:name=".presentation.activity.ScreenSharingActivity"
             android:exported="false"
-            android:theme="@style/Theme.P2PScreenSharing"/>
+            android:theme="@style/Theme.P2PScreenSharing" />
         <activity
-            android:name=".presentation.ui.MainActivity"
+            android:name=".presentation.activity.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:windowSoftInputMode="adjustResize"
-            android:theme="@style/Theme.P2PScreenSharing">
+            android:theme="@style/Theme.P2PScreenSharing"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <service
             android:name=".service.StreamingForegroundService"
             android:exported="false"

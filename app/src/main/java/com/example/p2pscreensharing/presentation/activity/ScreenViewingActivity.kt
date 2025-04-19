@@ -1,4 +1,4 @@
-package com.example.p2pscreensharing.presentation.ui
+package com.example.p2pscreensharing.presentation.activity
 
 import android.Manifest
 import android.content.pm.PackageManager

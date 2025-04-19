@@ -25,8 +25,4 @@ class StreamingRepositoryImpl(
     override fun stopReceiving() {
         streamingService.stopReceiving()
     }
-
-    override fun closeConnection() {
-        streamingService.closeConnection()
-    }
 }

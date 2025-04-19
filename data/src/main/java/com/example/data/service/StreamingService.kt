@@ -10,6 +10,4 @@ interface StreamingService {
     fun startReceiving(onFrameReceived: (FramePacket) -> Unit)
 
     fun stopReceiving()
-
-    fun closeConnection()
 }
