@@ -6,7 +6,11 @@ import com.example.domain.repository.SignalingRepository
 class StartTcpSocketServerUseCase(
     private val signalingRepository: SignalingRepository
 ) {
-    suspend operator fun invoke(port: Int, onReady: (PeerEntity?) -> Unit) {
-        signalingRepository.startTcpSocketServer(port, onReady)
+    suspend operator fun invoke(
+        port: Int,
+        onReady: (PeerEntity?) -> Unit,
+        onClientConnected: () -> Unit
+    ) {
+        signalingRepository.startTcpSocketServer(port, onReady, onClientConnected)
     }
 }

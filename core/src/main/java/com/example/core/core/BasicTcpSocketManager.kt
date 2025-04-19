@@ -20,7 +20,11 @@ class BasicTcpSocketManager : TcpSocketManager {
 
     private var inputStream: InputStream? = null
 
-    override suspend fun startServer(port: Int, onReady: (ip: String?, port: Int?) -> Unit): Unit =
+    override suspend fun startServer(
+        port: Int,
+        onReady: (ip: String?, port: Int?) -> Unit,
+        onClientConnected: () -> Unit
+    ): Unit =
         withContext(
             Dispatchers.IO
         ) {
@@ -34,6 +38,10 @@ class BasicTcpSocketManager : TcpSocketManager {
             try {
                 socket = serverSocket?.accept()
                 Log.d("LogSocket", "Client connected!")
+
+                withContext(Dispatchers.Main) {
+                    onClientConnected()
+                }
 
                 setupStreams()
             } catch (e: SocketException) {

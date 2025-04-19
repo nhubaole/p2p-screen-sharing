@@ -15,10 +15,18 @@ class SignalingRepositoryImpl(
         })
     }
 
-    override suspend fun startTcpSocketServer(port: Int, onReady: (PeerEntity?) -> Unit) {
-        signalingService.startTcpSocketServer(port = port, onReady = {
-            onReady(it?.toEntity())
-        })
+    override suspend fun startTcpSocketServer(
+        port: Int,
+        onReady: (PeerEntity?) -> Unit,
+        onClientConnected: () -> Unit
+    ) {
+        signalingService.startTcpSocketServer(
+            port = port,
+            onReady = {
+                onReady(it?.toEntity())
+            },
+            onClientConnected = onClientConnected
+        )
     }
 
     override suspend fun connectToPeer(ip: String, port: Int) {

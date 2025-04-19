@@ -20,15 +20,19 @@ class SignalingServiceReal(
         })
     }
 
-    override suspend fun startTcpSocketServer(port: Int, onReady: (ClientInfo?) -> Unit) {
-        tcpSocketManager.startServer(port = port) { ip, port ->
+    override suspend fun startTcpSocketServer(
+        port: Int,
+        onReady: (ClientInfo?) -> Unit,
+        onClientConnected: () -> Unit
+    ) {
+        tcpSocketManager.startServer(port = port, onReady = { ip, port ->
             onReady(
                 ClientInfo(
                     ip = ip.orEmpty(),
                     port = port ?: 0
                 )
             )
-        }
+        }, onClientConnected = onClientConnected)
     }
 
     override suspend fun connectToPeer(ip: String, port: Int) {

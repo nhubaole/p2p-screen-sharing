@@ -1,7 +1,11 @@
 package com.example.core.core
 
 interface TcpSocketManager {
-    suspend fun startServer(port: Int, onReady: (ip: String?, port: Int?) -> Unit)
+    suspend fun startServer(
+        port: Int,
+        onReady: (ip: String?, port: Int?) -> Unit,
+        onClientConnected: () -> Unit
+    )
 
     suspend fun connectToHost(ip: String, port: Int)
 

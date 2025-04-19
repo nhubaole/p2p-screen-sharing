@@ -21,6 +21,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,16 +37,20 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.example.p2pscreensharing.R
+import com.example.p2pscreensharing.presentation.viewmodel.MainViewModel
 
 @Composable
 fun ConnectToPeerScreen(
-    ipAddress: String = "127.123.21.12",
-    connectionStatus: String = "Not Connected",
-    isConnected: Boolean = false,
-    time: String = "00:00:00",
-    onConnectClick: () -> Unit
+    viewModel: MainViewModel,
+    onConnectClick: (String) -> Unit,
+    onDisconnectClick: () -> Unit,
+    onSettingClick: () -> Unit
 ) {
-    val statusColor = if (isConnected) Color(0xFF14AE5C) else Color.Red
+    val uiState by viewModel.uiState.collectAsState()
+
+    val statusColor = if (uiState.isConnected) Color(0xFF14AE5C) else Color.Red
+    var showDialog by remember { mutableStateOf(false) }
+    var ipAddress by remember { mutableStateOf("") }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -71,6 +80,9 @@ fun ConnectToPeerScreen(
                         .clip(RoundedCornerShape(4.dp))
                         .background(Color(0xFF1D2031))
                         .padding(8.dp)
+                        .clickable {
+                            onSettingClick()
+                        }
                 )
             }
 
@@ -108,16 +120,16 @@ fun ConnectToPeerScreen(
                 Column {
                     Text(
                         text = "Your IP",
-                        color = Color.White,
-                        style = AppTypography.titleMedium
+                        color = Color(0xFF7C7F90),
+                        style = AppTypography.labelMedium
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = ipAddress,
-                        color = Color(0xFF7C7F90),
-                        style = AppTypography.labelMedium
+                        text = uiState.ip,
+                        color = Color.White,
+                        style = AppTypography.titleMedium
                     )
                 }
             }
@@ -128,8 +140,18 @@ fun ConnectToPeerScreen(
                 modifier = Modifier
                     .size(140.dp)
                     .clip(CircleShape)
+                    .background(
+                        if (uiState.isConnected) Color(0xFF236DDF)
+                        else Color.Transparent
+                    )
                     .border(6.dp, Color(0xFF236DDF), CircleShape)
-                    .clickable { onConnectClick() },
+                    .clickable {
+                        if (uiState.isConnected) {
+                            onDisconnectClick()
+                        } else {
+                            showDialog = true
+                        }
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -138,7 +160,10 @@ fun ConnectToPeerScreen(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.ic_turn_on),
+                        painter = painterResource(
+                            if (uiState.isConnected) R.drawable.ic_turn_off
+                            else R.drawable.ic_turn_on
+                        ),
                         tint = Color.White,
                         contentDescription = null,
                         modifier = Modifier.size(48.dp)
@@ -147,7 +172,7 @@ fun ConnectToPeerScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "CONNECT",
+                        text = if (uiState.isConnected) "DISCONNECT" else "CONNECT",
                         color = Color.White,
                         style = AppTypography.labelSmall
                     )
@@ -162,7 +187,7 @@ fun ConnectToPeerScreen(
                     buildAnnotatedString {
                         append("Status : ")
                         withStyle(SpanStyle(color = statusColor)) {
-                            append(connectionStatus)
+                            append(if (uiState.isConnected) "Connected" else "Not Connected")
                         }
                     },
                     style = AppTypography.labelLarge,
@@ -172,11 +197,27 @@ fun ConnectToPeerScreen(
                 Spacer(modifier = Modifier.height(48.dp))
 
                 Text(
-                    text = time,
+                    text = uiState.time,
                     color = Color.White,
                     style = AppTypography.displaySmall
                 )
             }
         }
+    }
+
+    if (showDialog) {
+        ConnectIpDialog(
+            ip = ipAddress,
+            onIpChange = { ipAddress = it },
+            onDismiss = {
+                showDialog = false
+                ipAddress = ""
+            },
+            onConnect = {
+                onConnectClick(ipAddress)
+                showDialog = false
+                ipAddress = ""
+            }
+        )
     }
 }

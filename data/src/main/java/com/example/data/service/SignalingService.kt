@@ -5,7 +5,11 @@ import com.example.data.model.ClientInfo
 interface SignalingService {
     suspend fun startSocketServer(port: Int, onReady: (ClientInfo?) -> Unit)
 
-    suspend fun startTcpSocketServer(port: Int, onReady: (ClientInfo?) -> Unit)
+    suspend fun startTcpSocketServer(
+        port: Int,
+        onReady: (ClientInfo?) -> Unit,
+        onClientConnected: () -> Unit
+    )
 
     suspend fun connectToPeer(ip: String, port: Int)
 
