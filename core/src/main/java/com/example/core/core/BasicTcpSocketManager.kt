@@ -28,6 +28,8 @@ class BasicTcpSocketManager : TcpSocketManager {
         withContext(
             Dispatchers.IO
         ) {
+            serverSocket?.close()
+
             serverSocket = ServerSocket(port)
 
             onReady(
@@ -45,7 +47,7 @@ class BasicTcpSocketManager : TcpSocketManager {
 
                 setupStreams()
             } catch (e: SocketException) {
-                Log.w("LogSocket", "Server socket was closed, accept aborted.")
+                Log.w("LogSocket", e.toString())
             }
         }
 

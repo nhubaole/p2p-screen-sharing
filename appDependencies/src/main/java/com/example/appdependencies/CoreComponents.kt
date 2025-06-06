@@ -16,9 +16,8 @@ object CoreComponents {
     private lateinit var videoRecorderInstance: VideoRecorder
 
     fun getSocketManager(): UdpSocketManager {
-        if (!::udpSocketManagerInstance.isInitialized) {
-            udpSocketManagerInstance = BasicUdpSocketManager()
-        }
+        udpSocketManagerInstance = BasicUdpSocketManager()
+
         return udpSocketManagerInstance
     }
 

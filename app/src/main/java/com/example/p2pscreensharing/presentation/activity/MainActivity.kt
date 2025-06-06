@@ -80,7 +80,7 @@ class MainActivity : AppCompatActivity() {
             ConnectToPeerScreen(
                 viewModel = viewModel,
                 onSettingClick = {
-
+                    startActivity(Intent(this, SettingActivity::class.java))
                 },
                 onConnectClick = {
                     viewModel.connectToPeer(peerIp = it)

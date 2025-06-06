@@ -9,10 +9,12 @@ import android.os.Bundle
 import android.util.DisplayMetrics
 import android.widget.Button
 import android.widget.Toast
+import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import com.example.p2pscreensharing.R
+import com.example.p2pscreensharing.presentation.ui.ScreenSharingScreen
 import com.example.p2pscreensharing.service.StreamingForegroundService
 
 class ScreenSharingActivity : AppCompatActivity() {
@@ -55,11 +57,11 @@ class ScreenSharingActivity : AppCompatActivity() {
         viewerIp = intent.getStringExtra("viewer_ip") ?: ""
         viewerPort = intent.getIntExtra("viewer_port", 0)
 
-        if (viewerIp.isBlank() || viewerPort == 0) {
-            Toast.makeText(this, "Invalid Viewer Info", Toast.LENGTH_SHORT).show()
-            finish()
-            return
-        }
+//        if (viewerIp.isBlank() || viewerPort == 0) {
+//            Toast.makeText(this, "Invalid Viewer Info", Toast.LENGTH_SHORT).show()
+//            finish()
+//            return
+//        }
 
         findViewById<Button>(R.id.btnStopSharing).setOnClickListener {
             stopSharing()

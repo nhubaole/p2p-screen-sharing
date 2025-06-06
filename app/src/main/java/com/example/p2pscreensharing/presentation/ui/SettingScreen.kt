@@ -30,7 +30,6 @@ data class SettingItem(
     val iconRes: Int
 )
 
-
 @Composable
 fun SettingScreen(
     onBackClick: () -> Unit,

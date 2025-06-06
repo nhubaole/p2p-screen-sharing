@@ -17,12 +17,26 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
+object ConnectionSession {
+    var peerIp: String = ""
+    var peerPort: Int = 0
+    var isServerMode: Boolean = false
+    var connectedAtMillis: Long = 0L
+
+    fun clear() {
+        peerIp = ""
+        peerPort = 0
+        isServerMode = false
+        connectedAtMillis = 0L
+    }
+}
+
 class MainViewModel(
     private val startTcpSocketServer: StartTcpSocketServerUseCase,
     private val connectToPeer: ConnectToPeerUseCase,
     private val closeTcpConnection: CloseTcpConnectionUseCase,
 ) : ViewModel() {
-    private val PORT = 8080
+    private val PORT = 7123
 
     private val _connectToPeerUiState = MutableStateFlow(ConnectToPeerUiState())
     val uiState: StateFlow<ConnectToPeerUiState> = _connectToPeerUiState
@@ -74,6 +88,10 @@ class MainViewModel(
                 isConnected = true,
                 isServerMode = false
             )
+            ConnectionSession.peerIp = peerIp
+            ConnectionSession.peerPort = PORT
+            ConnectionSession.isServerMode = false
+            ConnectionSession.connectedAtMillis = System.currentTimeMillis()
 
             startTimer()
 
